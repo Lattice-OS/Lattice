@@ -2,14 +2,35 @@
 -- Lattice Standalone Package Manager (v0.4.0)
 -- Handles multi-file packages and self-seeding hash verification.
 
+-- Update the package path so that lua can find the required libraries
 package.path = package.path .. ";/lib/?.lua;/lib/?/init.lua"
 
+
+--- Section: Runtime Variables
+
+-- Runtime arguments
 local args = { ... }
+
+-- Base API URL
 local API_BASE = "https://lattice-os.cc/pkg/api/"
+
+-- Package Index
 local package_index = nil
 
+-- Dependency Tracker (prevents infinite recursion loops)
+local seen_packages = {}
 
--- 1. Helper: Raw HTTP Download
+-- Skip hash verification flag
+local skip_hash_flag = false
+
+-- Minimum Manifest Version flag
+local mmv = nil
+
+-- The branch to use for package installation
+local branch = "main"
+
+
+-- Helper function to fetch a URL and save it to a file.
 local function fetch(url, path)
     local res = http.get(url, { ["Cache-Control"] = "no-cache" })
     if not res then return false, "Connection failed" end
@@ -20,40 +41,54 @@ local function fetch(url, path)
     return true
 end
 
+-- Helper function to fetch the package index and store it once.
 local function fetch_index(branch)
     -- If the index exists, return it instead of fetching it again
     if package_index then return package_index end
 
-
+    -- If the index doesn't exist, fetch it.
     local res = http.get(API_BASE .. branch .. "/index?format=lua")
     if not res then error("Could not reach Lattice API") end
     local index_source = res.readAll()
     res.close()
+
+    -- Is this secure?
+    -- No, it's not secure. The index is loaded as a Lua script, which can execute arbitrary code.
+    -- But, since the lattice-api generates the code on the fly from toml, it __should__ be safer
+    -- than just loading arbitrary lua code from an untrusted source.
     package_index = load(index_source)()
-end
 
--- 2. Local State / CLI Flags
---- Skip hash verification flag
-local skip_hash_flag = false
-
---- Minimum Manifest Version flag
-local mmv = nil
-
-for i, arg in ipairs(args) do
-    if arg == "--skip-hash" or arg == "-s" then
-        skip_hash_flag = true
-        table.remove(args, i)
-    elseif arg == "--mmv" or arg == "-m" then
-        mmv = tonumber(args[i + 1])
-        table.remove(args, i)
-        table.remove(args, i + 1)
+    if mmv then
+        if package_index.repository.version ~= mmv then
+            print("Mesh: Repository version mismatch")
+            print("Mesh: Minimum Version: " .. mmv)
+            print("Mesh: Current Version: " .. package_index.repository.version)
+            error("Mesh: Repository version mismatch")
+        end
     end
 end
 
--- 3. Dependency Tracker (prevents infinite recursion loops)
-local seen_packages = {}
+-- Helper function to read the arguments
+local function read_args()
+    for i, arg in ipairs(args) do
+        if arg == "--skip-hash" or arg == "-s" then
+            skip_hash_flag = true
+            table.remove(args, i)
+        elseif arg == "--mmv" or arg == "-m" then
+            mmv = tonumber(args[i + 1])
+            table.remove(args, i)
+            table.remove(args, i + 1)
+        elseif arg == "--branch" or arg == "-b" then
+            branch = args[i + 1]
+            table.remove(args, i)
+            table.remove(args, i + 1)
+        end
+    end
+end
 
--- Helper: Generates the /os/drivers.lua mapping table from the index
+
+
+-- Generates the /os/drivers.lua mapping table from the index
 local function generate_driver_map(index)
     print("Mesh: Regenerating driver map...")
     local mapping = {}
@@ -72,7 +107,8 @@ local function generate_driver_map(index)
     print("Mesh: Driver map updated.")
 end
 
--- 4. Core Install Logic
+
+-- Helper function to install a package and all of its dependencies
 local function install_package(name, branch, bypass_hash)
     -- Prevent infinite recursion loops
     if seen_packages[name] then return true end
@@ -82,30 +118,13 @@ local function install_package(name, branch, bypass_hash)
     bypass_hash = bypass_hash or skip_hash_flag
 
     print("Mesh: Resolving " .. name .. "...")
-
-    if ! package_index then
-        -- A. Fetch index as Lua Table
-        local res = http.get(API_BASE .. branch .. "/index?format=lua")
-        if not res then error("Could not reach Lattice API") end
-        local index_source = res.readAll()
-        res.close()
-        package_index = load(index_source)()
-    end
-
-    if mmv then
-        if package_index.repository.version ~= mmv then
-            print("Mesh: Repository version mismatch")
-            print("Mesh: Minimum Version: " .. mmv)
-            print("Mesh: Current Version: " .. package_index.repository.version)
-            error("Mesh: Repository version mismatch")
-        end
-    end
+    local index = fetch_index()
 
 
-    if not package_index or not package_index.p then error("Invalid index received from server") end
-    print("Mesh: Manifest Updated At: " .. package_index.repository.updated)
+    if not index or not index.p then error("Invalid index received from server") end
+    print("Mesh: Manifest Updated At: " .. index.repository.updated)
 
-    local pkg = package_index.p[name]
+    local pkg = index.p[name]
     if not pkg then error("Package not found in index: " .. name) end
 
     -- B. Verify Hash Engine Availability
@@ -202,10 +221,13 @@ local function install_package(name, branch, bypass_hash)
     return true
 end
 
--- 5. CLI Entrypoint
+--- Section: CLI Entrypoint
+-- Read the command line arguments and parse the feature flags
+read_args()
+
+-- Command to execute
 local cmd = args[1]
 local target = args[2]
-local branch = args[3] or "main"
 
 if cmd == "install" then
     if not target then error("Usage: mesh install <package>") end
