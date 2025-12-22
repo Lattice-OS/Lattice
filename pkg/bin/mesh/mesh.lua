@@ -66,6 +66,8 @@ local function fetch_index(branch)
             error("Mesh: Repository version mismatch")
         end
     end
+
+    return package_index
 end
 
 -- Helper function to read the arguments
@@ -75,13 +77,13 @@ local function read_args()
             skip_hash_flag = true
             table.remove(args, i)
         elseif arg == "--mmv" or arg == "-m" then
-            mmv = tonumber(args[i + 1])
-            table.remove(args, i)
-            table.remove(args, i + 1)
+            table.remove(args, i)   -- Remove the mmv flag
+            mmv = tonumber(args[i]) -- Set the mmv value
+            table.remove(args, i)   -- Remove the mmv value
         elseif arg == "--branch" or arg == "-b" then
-            branch = args[i + 1]
-            table.remove(args, i)
-            table.remove(args, i + 1)
+            table.remove(args, i)   -- Remove the branch flag
+            branch = args[i]        -- Set the branch value
+            table.remove(args, i)   -- Remove the branch value
         end
     end
 end
