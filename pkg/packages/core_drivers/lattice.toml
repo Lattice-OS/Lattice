@@ -4,10 +4,10 @@ entrypoint = "lattice.toml"
 
 [dependencies]
 libs = [
-    "drivers.core.monitor",
-    "drivers.core.speaker",
-    "drivers.core.disk_drive",
-    "drivers.core.modem",
-    "drivers.core.computer",
-    "drivers.core.printer"
-    ]
+  "drivers.core.monitor",
+  "drivers.core.speaker",
+  "drivers.core.disk_drive",
+  "drivers.core.modem",
+  "drivers.core.computer",
+  "drivers.core.printer"
+]

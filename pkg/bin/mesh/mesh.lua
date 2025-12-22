@@ -6,6 +6,7 @@ package.path = package.path .. ";/lib/?.lua;/lib/?/init.lua"
 
 local args = { ... }
 local API_BASE = "https://lattice-os.cc/pkg/api/"
+local package_index = nil
 
 
 -- 1. Helper: Raw HTTP Download
@@ -19,12 +20,33 @@ local function fetch(url, path)
     return true
 end
 
+local function fetch_index(branch)
+    -- If the index exists, return it instead of fetching it again
+    if package_index then return package_index end
+
+
+    local res = http.get(API_BASE .. branch .. "/index?format=lua")
+    if not res then error("Could not reach Lattice API") end
+    local index_source = res.readAll()
+    res.close()
+    package_index = load(index_source)()
+end
+
 -- 2. Local State / CLI Flags
+--- Skip hash verification flag
 local skip_hash_flag = false
+
+--- Minimum Manifest Version flag
+local mmv = nil
+
 for i, arg in ipairs(args) do
     if arg == "--skip-hash" or arg == "-s" then
         skip_hash_flag = true
         table.remove(args, i)
+    elseif arg == "--mmv" or arg == "-m" then
+        mmv = tonumber(args[i + 1])
+        table.remove(args, i)
+        table.remove(args, i + 1)
     end
 end
 
@@ -61,17 +83,29 @@ local function install_package(name, branch, bypass_hash)
 
     print("Mesh: Resolving " .. name .. "...")
 
-    -- A. Fetch index as Lua Table
-    local res = http.get(API_BASE .. branch .. "/index?format=lua")
-    if not res then error("Could not reach Lattice API") end
-    local index_source = res.readAll()
-    res.close()
+    if ! package_index then
+        -- A. Fetch index as Lua Table
+        local res = http.get(API_BASE .. branch .. "/index?format=lua")
+        if not res then error("Could not reach Lattice API") end
+        local index_source = res.readAll()
+        res.close()
+        package_index = load(index_source)()
+    end
 
-    local index = load(index_source)()
-    if not index or not index.p then error("Invalid index received from server") end
-    print("Mesh: Manifest Updated At: " .. index.repository.updated)
+    if mmv then
+        if package_index.repository.version ~= mmv then
+            print("Mesh: Repository version mismatch")
+            print("Mesh: Minimum Version: " .. mmv)
+            print("Mesh: Current Version: " .. package_index.repository.version)
+            error("Mesh: Repository version mismatch")
+        end
+    end
 
-    local pkg = index.p[name]
+
+    if not package_index or not package_index.p then error("Invalid index received from server") end
+    print("Mesh: Manifest Updated At: " .. package_index.repository.updated)
+
+    local pkg = package_index.p[name]
     if not pkg then error("Package not found in index: " .. name) end
 
     -- B. Verify Hash Engine Availability
@@ -161,7 +195,7 @@ local function install_package(name, branch, bypass_hash)
     -- G. Driver Mapping Hook
     -- If this was a driver or we are doing a major bootstrap, regenerate the lookup table
     if name:match("^drivers%.") or name:match("^packages%.") then
-        generate_driver_map(index)
+        generate_driver_map(package_index)
     end
 
     print("Mesh: Installed " .. name)
