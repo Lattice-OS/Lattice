@@ -1,6 +1,6 @@
 [repository]
 name = "Lattice Official"
-updated = 1_766_408_792
+updated = 1_766_411_007
 
 [p."services.audio"]
 p = "services/audio"
@@ -153,7 +153,7 @@ d = [ "shared.sha2" ]
 
   [[p."bin.mesh".f]]
   n = "mesh.lua"
-  s = "b7e5f3f66f751a4e3ff7369899e776c4805a95b14b978aa71f7551c73e688346"
+  s = "f20148d7a6c44ce821ac24cafd137c6a37c1abf0b4d8fe6ad60c9e5127d66844"
 
   [p."bin.mesh".m]
   install_path = "/bin/mesh.lua"
