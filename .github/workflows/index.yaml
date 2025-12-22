@@ -35,14 +35,14 @@ jobs:
 
       # 2. Regenerate index
       - name: Build index
-        run: ./packup-bin -d os_files/pkg
+        run: ./packup-bin -d pkg
 
       # 3. Commit & push if changed
       - name: Commit index
         run: |
           git config user.name "Lattice Bot"
           git config user.email "bot@lattice-os.cc"
-          git add os_files/pkg/index.toml
+          git add pkg/index.toml
           if git diff --cached --quiet; then
             echo "No changes in index.toml"
           else
