@@ -1,6 +1,0 @@
-[package]
-name = "drivers.core.printer"
-entrypoint = "init.lua"
-description = "Generic Printer Driver"
-[driver]
-supported_types = ["printer"]
