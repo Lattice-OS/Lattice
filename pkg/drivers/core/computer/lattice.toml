@@ -1,0 +1,6 @@
+[package]
+name = "drivers.core.computer"
+entrypoint = "init.lua"
+description = "Redstone & time driver for the ‘computer’ peripheral"
+[driver]
+supported_types = ["computer"]
