@@ -30,12 +30,15 @@ Think *blocks*, not blobs.
 
 - **Advanced Computer** (required)
 - **HTTP enabled** (`http.enable=true`)
-- AllTheMods 10 modpack
 - A willingness to rebuild the grid if something breaks
 
 Optional but encouraged:
 - Monitor (for status output)
 - Speaker (for boot chimes)
+- **Wireless Modem** (for network connectivity)
+
+Additional Notes:
+- The system has only been tested on the AllTheMods 10 modpack.
 
 ---
 
@@ -46,7 +49,7 @@ Installing Lattice is intentionally simple.
 From a **ComputerCraft Computer**, run:
 
 ```sh
-wget run https://raw.githubusercontent.com/AltriusRS/CCT/main/Lattice/install.lua
+wget run https://lattice-os.cc/install
 ```
 
 The installer will:
