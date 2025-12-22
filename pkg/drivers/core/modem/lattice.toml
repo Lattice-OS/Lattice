@@ -1,10 +1,6 @@
 [package]
 name = "drivers.core.modem"
-entrypoint = "init.lua"
-description = "Generic Modem Driver"
-
-[dependencies]
-lib = ["shared.toml", "shared.nanoid", "shared.log"]
-
+version = "0.1.0"
+description = "Base modem driver – wired & wireless"
 [driver]
 supported_types = ["modem"]

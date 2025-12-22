@@ -1,0 +1,6 @@
+[package]
+name = "drivers.core.disk_drive"
+version = "0.1.0"
+description = "Disk drive mount/unmount driver"
+[driver]
+supported_types = ["drive"]

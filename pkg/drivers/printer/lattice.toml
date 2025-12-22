@@ -1,0 +1,6 @@
+[package]
+name = "drivers.core.printer"
+version = "0.1.0"
+description = "Generic Printer Driver"
+[driver]
+supported_types = ["printer"]
