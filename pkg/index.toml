@@ -1,6 +1,6 @@
 [repository]
 name = "Lattice Official"
-updated = 1_766_274_026
+updated = 1_766_408_112
 
 [p."services.audio"]
 p = "services/audio"
@@ -185,6 +185,14 @@ t = [ "printer" ]
   n = "init.lua"
   s = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
+[p."drivers.core.computer"]
+p = "drivers/core/computer"
+t = [ "computer" ]
+
+  [[p."drivers.core.computer".f]]
+  n = "init.lua"
+  s = "3dc58f5eccdac304f5b5f0824cec618e97edb40b3611435531edd0eff35e393d"
+
 [p."drivers.core.speaker"]
 p = "drivers/core/speaker"
 d = [ "shared.log" ]
@@ -199,6 +207,14 @@ p = "drivers/core/modem"
 t = [ "modem" ]
 
   [[p."drivers.core.modem".f]]
+  n = "init.lua"
+  s = "af7975cafb04ab2ed1967190ecdce4e4e6ace221e9ed5780d9ab369324ebf612"
+
+[p."drivers.core.disk_drive"]
+p = "drivers/core/disk_drive"
+t = [ "drive" ]
+
+  [[p."drivers.core.disk_drive".f]]
   n = "init.lua"
   s = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
