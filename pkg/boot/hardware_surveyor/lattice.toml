@@ -1,0 +1,6 @@
+[package]
+name = "boot.hardware_surveyor"
+entrypoint = "init.lua"
+
+[dependencies]
+libs = []

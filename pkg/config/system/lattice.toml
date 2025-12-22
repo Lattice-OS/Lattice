@@ -1,0 +1,9 @@
+[package]
+name = "config.system"
+entrypoint = "system.toml"
+description = "Default Lattice system configuration"
+
+[metadata]
+# Even though it's called system.toml in the repo,
+# it lands as /os/lattice.toml on the machine.
+install_path = "/os/lattice.toml"

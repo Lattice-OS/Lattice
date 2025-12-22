@@ -1,0 +1,23 @@
+[system]
+name = "Lattice"
+version = "0.1.0"
+codename = "Scaffold"
+
+[node]
+id = "node-001"
+role = "controller"
+
+[boot]
+entry = "/boot/init.lua"
+splash = true
+
+[dependencies]
+shared = ["sha2", "toml", "downloader", "log"]
+
+[log]
+level = "info"
+file = "/boot/install.log"
+
+[ui]
+monitor = true
+speaker = true

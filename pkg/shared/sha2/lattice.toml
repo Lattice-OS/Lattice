@@ -1,0 +1,4 @@
+[package]
+name = "shared.sha2"
+entrypoint = "init.lua"
+description = "SHA2 component for Lattice"

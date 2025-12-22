@@ -1,0 +1,15 @@
+[package]
+name = "bin.mesh"
+entrypoint = "mesh.lua"
+description = "Lattice Standalone Package Manager"
+authors = ["Arthur <arthur@lattice-os.cc>"]
+
+[dependencies]
+# We don't list sha2 here as a 'hard' dependency in the index
+# because mesh handles the self-seeding bootstrap internally.
+# But listing it here ensures it's available for non-bootstrap runs.
+libs = ["shared.sha2"]
+
+[metadata]
+# Tells the installer/mesh where this should live on disk
+install_path = "/bin/mesh.lua"

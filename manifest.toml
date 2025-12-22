@@ -1,0 +1,15 @@
+[[files]]
+path = "bin/mesh.lua"
+cxm = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+[[files]]
+path = "os/core.lua"
+cxm = "dfee0814e2b522f7b63728454166a026cb9f927d23e1a1cd005bd851cd798bf3"
+
+[[files]]
+path = "os/networking.lua"
+cxm = ""
+
+[[files]]
+path = "opt/repository.toml"
+cxm = "bc834c655edd494815cd20b241f9fe8757e13a8e837b24915626bd5dcf14d522"

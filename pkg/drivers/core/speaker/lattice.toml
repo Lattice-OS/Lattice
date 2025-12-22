@@ -1,0 +1,10 @@
+[package]
+name = "drivers.core.speaker"
+entrypoint = "init.lua"
+description = "Generic Speaker Driver"
+
+[dependencies]
+libs = ["shared.log"]
+
+[driver]
+supported_types = ["speaker"]

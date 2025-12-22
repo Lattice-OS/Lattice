@@ -1,0 +1,4 @@
+[repository]
+base = "https://lattice-os.cc/pkg/"
+branch = "main"
+index = "index.toml"

@@ -1,0 +1,7 @@
+[package]
+name = "drivers.core.monitor"
+entrypoint = "init.lua"
+description = "Generic Display Driver"
+
+[driver]
+supported_types = ["monitor"]

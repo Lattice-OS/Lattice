@@ -1,0 +1,4 @@
+[package]
+name = "shared.nanoid"
+entrypoint = "init.lua"
+description = "NanoID component for Lattice"

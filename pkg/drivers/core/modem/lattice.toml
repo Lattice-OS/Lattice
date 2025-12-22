@@ -1,0 +1,10 @@
+[package]
+name = "drivers.core.modem"
+entrypoint = "init.lua"
+description = "Generic Modem Driver"
+
+[dependencies]
+lib = ["shared.toml", "shared.nanoid", "shared.log"]
+
+[driver]
+supported_types = ["modem"]

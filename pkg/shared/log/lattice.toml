@@ -1,0 +1,4 @@
+[package]
+name = "shared.log"
+entrypoint = "init.lua"
+description = "Logging component for Lattice"

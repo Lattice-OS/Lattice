@@ -1,0 +1,9 @@
+[package]
+name = "packages.boot"
+
+[dependencies]
+libs = [
+    "boot.hardware_surveyor",
+    "boot.lboot",
+    "boot.startup",
+]

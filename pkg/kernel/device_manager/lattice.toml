@@ -1,0 +1,7 @@
+[package]
+name = "kernel.device_manager"
+entrypoint = "init.lua"
+description = "Lattice Device Manager Service"
+
+[dependencies]
+libs = ["shared.toml", "shared.log"]

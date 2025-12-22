@@ -1,0 +1,6 @@
+[package]
+name = "packages.core_drivers"
+entrypoint = "lattice.toml"
+
+[dependencies]
+libs = ["drivers.core.monitor", "drivers.core.speaker"]

@@ -1,0 +1,6 @@
+[package]
+name = "boot.lboot"
+entrypoint = "init.lua"
+
+[dependencies]
+libs = ["shared.log", "shared.toml", "kernel.device_manager"]

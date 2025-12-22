@@ -1,0 +1,4 @@
+[package]
+name = "shared.toml"
+entrypoint = "init.lua"
+description = "Lattice standard TOML parsing"

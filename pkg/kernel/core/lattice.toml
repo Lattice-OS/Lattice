@@ -1,0 +1,7 @@
+[package]
+name = "kernel.core"
+entrypoint = "init.lua"
+description = "Lattice Kernel Service"
+
+[dependencies]
+libs = ["shared.log", "shared.toml", "kernel.device_manager", "services.debug", "services.audio"]

@@ -1,0 +1,7 @@
+[package]
+name = "services.audio"
+entrypoint = "init.lua"
+description = "Lattice Audio Arbitration Service"
+
+[dependencies]
+libs = ["shared.log", "kernel.device_manager"]

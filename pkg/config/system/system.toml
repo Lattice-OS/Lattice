@@ -1,0 +1,35 @@
+[system]
+name = "Lattice"
+version = "0.1.0"
+codename = "Scaffold"
+
+[node]
+role = "controller"
+
+# This currently does nothing
+# as updates are not implemented
+# into the kernel
+[updates]
+enabled = true
+# Interval in seconds between update checks
+interval = 86400 # 24 hours
+
+[services.debug]
+enabled = true
+
+[services.status_lights]
+enabled = true
+threshold_power_light = 3
+threshold_error_light = 5
+face = "back"
+
+[services.reboot_button]
+enabled = true
+face = "front"
+threshold = 5
+
+[interrupts.redstone]
+enabled = true
+
+[interrupts.peripherals]
+enabled = true

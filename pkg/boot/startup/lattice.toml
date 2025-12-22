@@ -1,0 +1,8 @@
+[package]
+name = "boot.startup"
+entrypoint = "init.lua"
+description = "Lattice OS Root Bootstrapper"
+
+[metadata]
+# Override the standard /os/boot/startup/ logic
+install_path = "/startup.lua"

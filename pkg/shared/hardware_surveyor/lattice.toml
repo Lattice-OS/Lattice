@@ -1,0 +1,4 @@
+[package]
+name = "shared.hardware_surveyor"
+entrypoint = "init.lua"
+description = "Hardware Surveyor component for Lattice"

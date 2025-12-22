@@ -1,0 +1,7 @@
+[package]
+name = "config.repo"
+entrypoint = "repo.toml"
+description = "Default Lattice repository configuration"
+
+[metadata]
+install_path = "/os/repo.toml"
