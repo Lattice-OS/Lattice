@@ -3,8 +3,8 @@ name: Update package index
 on:
   push:
     branches: ["**"]
-    paths: ["os_files/pkg/**"]
-  workflow_dispatch: # manual trigger button
+    paths: ["pkg/**"]
+  workflow_dispatch:
 
 jobs:
   index:
@@ -15,12 +15,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 1. Fetch latest *non-prerelease* packup-bin from the packup repo
+      # 1. Download latest *non-prerelease* packup-bin from lattice-os/packup
+      - name: Get latest release info
+        id: release
+        run: |
+          # GitHub API: /repos/{owner}/{repo}/releases/latest
+          JSON=$(curl -s -H "Accept: application/vnd.github+json" \
+                      https://api.github.com/repos/lattice-os/packup/releases/latest)
+          DL_URL=$(echo "$JSON" | jq -r '.assets[] | select(.name=="packup-bin") | .url')
+
+          echo "asset_url=$DL_URL" >> $GITHUB_OUTPUT
+
       - name: Download packup-bin
         run: |
           curl -L -o packup-bin \
-          "$(curl -s https://api.github.com/repos/lattice-os/packup/releases/latest | \
-            jq -r '.assets[] | select(.name=="packup-bin") | .browser_download_url')"
+            -H "Accept: application/octet-stream" \
+            "${{ steps.release.outputs.asset_url }}"
           chmod +x packup-bin
 
       # 2. Regenerate index
