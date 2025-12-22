@@ -1,0 +1,41 @@
+name: Update package index
+
+on:
+  push:
+    branches: ["**"]
+    paths: ["os_files/pkg/**"]
+  workflow_dispatch: # manual trigger button
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 1. Fetch latest *non-prerelease* packup-bin from the packup repo
+      - name: Download packup-bin
+        run: |
+          curl -L -o packup-bin \
+          "$(curl -s https://api.github.com/repos/lattice-os/packup/releases/latest | \
+            jq -r '.assets[] | select(.name=="packup-bin") | .browser_download_url')"
+          chmod +x packup-bin
+
+      # 2. Regenerate index
+      - name: Build index
+        run: ./packup-bin -d os_files/pkg
+
+      # 3. Commit & push if changed
+      - name: Commit index
+        run: |
+          git config user.name "Lattice Bot"
+          git config user.email "bot@lattice-os.cc"
+          git add os_files/pkg/index.toml
+          if git diff --cached --quiet; then
+            echo "No changes in index.toml"
+          else
+            git commit -m "chore: auto-update index [skip ci]"
+            git push
+          fi
