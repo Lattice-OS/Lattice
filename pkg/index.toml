@@ -1,6 +1,6 @@
 [repository]
 name = "Lattice Official"
-updated = 1_766_408_112
+updated = 1_766_408_792
 
 [p."services.audio"]
 p = "services/audio"
@@ -56,7 +56,14 @@ d = [
 [p."packages.core_drivers"]
 p = "packages/core_drivers"
 f = [ ]
-d = [ "drivers.core.monitor", "drivers.core.speaker" ]
+d = [
+  "drivers.core.monitor",
+  "drivers.core.speaker",
+  "drivers.core.disk_drive",
+  "drivers.core.modem",
+  "drivers.core.computer",
+  "drivers.core.printer"
+]
 
 [p."packages.kernel"]
 p = "packages/kernel"
@@ -183,7 +190,7 @@ t = [ "printer" ]
 
   [[p."drivers.core.printer".f]]
   n = "init.lua"
-  s = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  s = "07001e684472ec02f4521549d5392839d075180261f3c7a04698eb83fdfef723"
 
 [p."drivers.core.computer"]
 p = "drivers/core/computer"
@@ -216,7 +223,7 @@ t = [ "drive" ]
 
   [[p."drivers.core.disk_drive".f]]
   n = "init.lua"
-  s = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  s = "bb12de657d71f73d0ebf64a64776b136ce4afe0836b8ec549a7ed536f964c1e7"
 
 [p."drivers.core.monitor"]
 p = "drivers/core/monitor"
