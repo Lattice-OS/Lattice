@@ -1,6 +1,7 @@
 [package]
 name = "drivers.core.modem"
+description = "Generic modem driver (wired/wireless)"
 entrypoint = "init.lua"
-description = "Base modem driver – wired & wireless"
+
 [driver]
 supported_types = ["modem"]

@@ -8,5 +8,5 @@ libs = [
   "shared.nanoid",
   "shared.log",
   "shared.hardware_surveyor",
-  "shared.sounds"
+  "shared.sounds",
 ]
