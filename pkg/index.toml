@@ -1,6 +1,6 @@
 [repository]
 name = "Lattice Official"
-updated = 1_766_507_859
+updated = 1_766_509_124
 
 [p."services.audio"]
 p = "services/audio"
@@ -8,7 +8,7 @@ d = [ "shared.log", "kernel.device_manager" ]
 
   [[p."services.audio".f]]
   n = "init.lua"
-  s = "49fc66db796b77e9807c4c2d0fbff606685cb64cb5ce7939b13c03e91d96d77b"
+  s = "0cdb263610e691fed3b98c7c0ebbb5e28e15ba461a3bdf36f884dfb50b86875f"
 
 [p."services.debug"]
 p = "services/debug"
@@ -161,7 +161,7 @@ d = [ "shared.sha2" ]
 
   [[p."bin.mesh".f]]
   n = "mesh.lua"
-  s = "e2a9673ba4bbfe82938c87e19122ec8ba4b51a3978a34e35e25a938c203ab941"
+  s = "f748126ba3436248394664bfaf230197e1e8e6f6fbd7816c4a93226ef5d7d098"
 
   [p."bin.mesh".m]
   install_path = "/bin/mesh.lua"
@@ -215,7 +215,7 @@ t = [ "speaker" ]
 
   [[p."drivers.core.speaker".f]]
   n = "init.lua"
-  s = "f9b4c3bc70842c891ba08b7f0aa3eac354266d838fee669b4c5e6005860b1333"
+  s = "725608277bf4f0b35df7a9331f4fbf4dbe3c7dc82d732c3b5f5627f61254764e"
 
 [p."drivers.core.modem"]
 p = "drivers/core/modem"
