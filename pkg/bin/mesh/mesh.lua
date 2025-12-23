@@ -1,5 +1,5 @@
 -- mesh.lua
--- Lattice Standalone Package Manager (v0.4.0)
+-- Lattice Standalone Package Manager (v0.4.1)
 -- Handles multi-file packages and self-seeding hash verification.
 
 -- Update the package path so that lua can find the required libraries
@@ -122,7 +122,6 @@ local function install_package(name, branch, bypass_hash)
     print("Mesh: Resolving " .. name .. "...")
     local index = fetch_index(branch)
 
-
     if not index or not index.p then error("Invalid index received from server") end
     print("Mesh: Manifest Updated At: " .. index.repository.updated)
 
@@ -150,28 +149,41 @@ local function install_package(name, branch, bypass_hash)
         end
     end
 
-    -- D. Determine the Install Root
     -- D. Determine the Install Root / Path
     local dest_root = ""
-    local is_override = false
+    local override_path = nil
+    local override_is_dir = false
 
-    -- Check for Metadata Override first
     if pkg.m and pkg.m.install_path then
-        dest_root = fs.getDir(pkg.m.install_path)
-        is_override = true
+        override_path = pkg.m.install_path
+
+        -- Treat install_path as a directory if it doesn't look like a file path.
+        -- e.g. "/lib/shared/sounds" (dir) vs "/startup.lua" (file)
+        if override_path:sub(-1) == "/" then
+            override_is_dir = true
+            override_path = override_path:sub(1, -2) -- trim trailing slash
+        else
+            local last = fs.getName(override_path)
+            override_is_dir = not last:find("%.") -- no extension -> dir
+        end
+
+        if override_is_dir then
+            dest_root = override_path
+        else
+            dest_root = fs.getDir(override_path)
+        end
     else
-        -- Standard Logic
+        -- Standard logic
         local root = "/os"
         if name:match("^shared%.") then
             root = "/lib"
         elseif name:match("^bin%.") then
             root = ""
         end
-        local pkg_dir_path = name:gsub("%.", "/")
-        dest_root = root .. "/" .. pkg_dir_path
+        dest_root = root .. "/" .. name:gsub("%.", "/")
     end
 
-    if not fs.exists(dest_root) and dest_root ~= "" then
+    if dest_root ~= "" and not fs.exists(dest_root) then
         fs.makeDir(dest_root)
     end
 
@@ -179,11 +191,15 @@ local function install_package(name, branch, bypass_hash)
     for _, file_entry in ipairs(pkg.f) do
         local filename = file_entry.n
         local expected_hash = file_entry.s
-        local dest_path = ""
 
-        if is_override then
-            -- Use the exact path provided in metadata
-            dest_path = pkg.m.install_path
+        local dest_path
+        if override_path then
+            if override_is_dir then
+                dest_path = dest_root .. "/" .. filename
+            else
+                -- File override: install_path is the exact destination (single-file packages)
+                dest_path = override_path
+            end
         else
             dest_path = dest_root .. "/" .. filename
         end
@@ -192,13 +208,11 @@ local function install_package(name, branch, bypass_hash)
 
         print("Mesh: Fetching " .. name .. ":" .. filename)
         local ok, err = fetch(file_url, dest_path)
-
         if not ok then
             error("Download failed for " .. filename .. ": " .. err)
         end
 
         -- F. Integrity Check
-        -- Can be skipped by setting the --skip-hash flag
         if not bypass_hash and sha2 then
             local f = fs.open(dest_path, "r")
             local content = f.readAll()
@@ -207,14 +221,21 @@ local function install_package(name, branch, bypass_hash)
             local actual_hash = sha2.sha256(content)
             if actual_hash ~= expected_hash then
                 fs.delete(dest_path)
-                error("\nIntegrity Error: Hash mismatch for " ..
-                    name .. ":" .. filename .. "\nExpected: " .. expected_hash .. "\nActual: " .. actual_hash)
+                error(
+                    "\nIntegrity Error: Hash mismatch for "
+                    .. name
+                    .. ":"
+                    .. filename
+                    .. "\nExpected: "
+                    .. expected_hash
+                    .. "\nActual: "
+                    .. actual_hash
+                )
             end
         end
     end
 
     -- G. Driver Mapping Hook
-    -- If this was a driver or we are doing a major bootstrap, regenerate the lookup table
     if name:match("^drivers%.") or name:match("^packages%.") then
         generate_driver_map(package_index)
     end
@@ -252,6 +273,6 @@ elseif cmd == "bootstrap" then
     install_package("bin.mesh", branch)
     print("\nMesh: Lattice OS Bootstrap Complete.")
 else
-    print("Lattice Mesh v0.4.0")
+    print("Lattice Mesh v0.4.1")
     print("Usage: mesh install <pkg> [--skip-hash] [branch]")
 end
