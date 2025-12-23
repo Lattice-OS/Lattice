@@ -1,0 +1,6 @@
+[package]
+name = "shared.sounds"
+description = "Core sound assets for Lattice OS"
+
+[metadata]
+install_path = "/lib/shared/sounds"

@@ -130,6 +130,26 @@ local function build_new_driver(peripheral)
         return true
     end
 
+    function driver:play_audio(chunk)
+        if type(self.peripheral.playAudio) ~= "function" then
+            return false, "speaker does not support audio streaming"
+        end
+
+        local ok, result = pcall(self.peripheral.playAudio, chunk)
+        if not ok then
+            self.last_error = result
+            log.error("Failed to play audio chunk: " .. tostring(result))
+            return false, result
+        end
+
+        self.last_error = nil
+        return result -- boolean from playAudio
+    end
+
+    function driver:wait()
+        os.pullEvent("speaker_audio_empty")
+    end
+
     return driver
 end
 
