@@ -2,5 +2,6 @@
 name = "drivers.core.disk_drive"
 entrypoint = "init.lua"
 description = "Disk drive mount/unmount driver"
+
 [driver]
 supported_types = ["drive"]
