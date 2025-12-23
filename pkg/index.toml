@@ -1,6 +1,6 @@
 [repository]
 name = "Lattice Official"
-updated = 1_766_510_619
+updated = 1_766_511_528
 
 [p."services.audio"]
 p = "services/audio"
@@ -50,7 +50,8 @@ d = [
   "kernel.device_manager",
   "config.system",
   "config.repo",
-  "packages.core_drivers"
+  "packages.core_drivers",
+  "packages.shared"
 ]
 
 [p."packages.core_drivers"]
@@ -226,7 +227,7 @@ t = [ "modem" ]
 
   [[p."drivers.core.modem".f]]
   n = "init.lua"
-  s = "af7975cafb04ab2ed1967190ecdce4e4e6ace221e9ed5780d9ab369324ebf612"
+  s = "7a394efae42e9a41e6ae5789a9a6580901cde0dab9263ef72763ed9fbfa00302"
 
 [p."drivers.core.disk_drive"]
 p = "drivers/core/disk_drive"
