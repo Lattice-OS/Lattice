@@ -3,6 +3,7 @@
 
 local log = require("shared.log")
 local device_manager = require("os.kernel.device_manager")
+local dfpwm = require("cc.audio.dfpwm")
 
 local Audio = {
     initialized = false,
@@ -31,25 +32,29 @@ local function get_speaker()
     return Audio.speakers[1]
 end
 
-local function play_dfpwm_handle(handle)
+local function play_dfpwm_handle(handle, volume)
     local speaker, err = get_speaker()
     if not speaker then
         return false, err
     end
 
-    while true do
-        local chunk = handle.read(DFPWM_CHUNK_SIZE)
-        if not chunk then break end
+    local decoder = dfpwm.make_decoder()
 
-        while true do
-            local ok, result = speaker.driver:play_audio(chunk)
-            if not ok then
-                return false, result
-            end
-            if result then
-                break
-            end
+    while true do
+        local dfchunk = handle.read(DFPWM_CHUNK_SIZE)
+        if not dfchunk then break end
+
+        -- Decode dfpwm bytes -> PCM samples table
+        local samples = decoder(dfchunk)
+
+        -- Push samples to speaker (may return false if buffer full)
+        local ok, accepted = speaker.driver:play_pcm(samples, volume)
+        if not ok then return false, accepted end
+
+        while not accepted do
             speaker.driver:wait()
+            ok, accepted = speaker.driver:play_pcm(samples, volume)
+            if not ok then return false, accepted end
         end
     end
 
@@ -161,11 +166,10 @@ function Audio.play_note(instrument, volume, pitch)
     return true
 end
 
-function Audio.play_dfpwm_file(path)
+function Audio.play_dfpwm_file(path, volume)
     if not Audio.initialized then
         return false, "audio service not initialized"
     end
-
     if Audio.busy then
         return false, "audio busy"
     end
@@ -176,20 +180,18 @@ function Audio.play_dfpwm_file(path)
     end
 
     Audio.busy = true
-    local ok, err = play_dfpwm_handle(f)
+    local ok, err = play_dfpwm_handle(f, volume)
     Audio.busy = false
-
     f.close()
 
     if not ok then
         log.error("Audio play_dfpwm_file failed: " .. tostring(err))
         return false, err
     end
-
     return true
 end
 
-function Audio.play_dfpwm_handle(handle)
+function Audio.play_dfpwm_handle(handle, volume)
     if not Audio.initialized then
         return false, "audio service not initialized"
     end
@@ -199,7 +201,7 @@ function Audio.play_dfpwm_handle(handle)
     end
 
     Audio.busy = true
-    local ok, err = play_dfpwm_handle(handle)
+    local ok, err = play_dfpwm_handle(handle, volume)
     Audio.busy = false
 
     if not ok then

@@ -115,6 +115,7 @@ local function build_new_driver(peripheral)
 
         local ok, err = pcall(
             self.peripheral.playNote,
+            self.peripheral,
             i,
             v,
             p
@@ -135,19 +136,38 @@ local function build_new_driver(peripheral)
             return false, "speaker does not support audio streaming"
         end
 
-        local ok, result = pcall(self.peripheral.playAudio, chunk)
+        -- playAudio wants: (chunk, [volume])
+        local ok, accepted = pcall(self.peripheral.playAudio, chunk, self.volume)
         if not ok then
-            self.last_error = result
-            log.error("Failed to play audio chunk: " .. tostring(result))
-            return false, result
+            self.last_error = accepted
+            log.error("Failed to play audio chunk: " .. tostring(accepted))
+            return false, accepted
         end
 
         self.last_error = nil
-        return result -- boolean from playAudio
+        return true, accepted
     end
 
     function driver:wait()
         os.pullEvent("speaker_audio_empty")
+    end
+
+    function driver:play_pcm(samples, volume)
+        if type(self.peripheral.playAudio) ~= "function" then
+            return false, "speaker does not support playAudio"
+        end
+
+        local vol = volume or self.volume
+
+        local ok, accepted_or_err = pcall(self.peripheral.playAudio, samples, vol)
+        if not ok then
+            self.last_error = accepted_or_err
+            log.error("Failed to play PCM: " .. tostring(accepted_or_err))
+            return false, accepted_or_err
+        end
+
+        self.last_error = nil
+        return true, accepted_or_err -- accepted? boolean
     end
 
     return driver

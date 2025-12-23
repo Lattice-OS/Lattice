@@ -120,7 +120,7 @@ local function install_package(name, branch, bypass_hash)
     bypass_hash = bypass_hash or skip_hash_flag
 
     print("Mesh: Resolving " .. name .. "...")
-    local index = fetch_index()
+    local index = fetch_index(branch)
 
 
     if not index or not index.p then error("Invalid index received from server") end
@@ -230,6 +230,15 @@ read_args()
 -- Command to execute
 local cmd = args[1]
 local target = args[2]
+
+print("Mesh: Starting")
+print("Mesh: Parsing arguments")
+print("Mesh: CMD: " .. cmd)
+print("Mesh: Target: " .. tostring(target))
+print("Mesh: Branch: " .. branch)
+print("Mesh: Skip-Hash: " .. tostring(skip_hash))
+print("Mesh: MMV: " .. tostring(mmv))
+print("Mesh: Executing command")
 
 if cmd == "install" then
     if not target then error("Usage: mesh install <package>") end
