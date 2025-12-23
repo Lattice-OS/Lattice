@@ -1,6 +1,6 @@
 [repository]
 name = "Lattice Official"
-updated = 1_766_509_124
+updated = 1_766_509_997
 
 [p."services.audio"]
 p = "services/audio"
@@ -129,7 +129,10 @@ p = "shared/nanoid"
 
 [p."shared.sounds"]
 p = "shared/sounds"
-f = [ ]
+
+  [[p."shared.sounds".f]]
+  n = "boot.dfpwm"
+  s = "3a5d943429d7bb0e5666322d480e5333e0eaaf9be5e46531171fe0a863c9ad8b"
 
   [p."shared.sounds".m]
   install_path = "/lib/shared/sounds"
