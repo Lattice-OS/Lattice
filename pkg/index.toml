@@ -1,6 +1,6 @@
 [repository]
 name = "Lattice Official"
-updated = 1_766_511_528
+updated = 1_766_516_022
 
 [p."services.audio"]
 p = "services/audio"
@@ -16,7 +16,7 @@ d = [ "shared.log", "kernel.device_manager" ]
 
   [[p."services.debug".f]]
   n = "init.lua"
-  s = "5beda69bb3052af57e61461397624777823cf4fa5e5e01f0eb35939fa1ffb99f"
+  s = "f5956c20c448b0c7391a848e929e594e84b066192bbb9aa4e4a341a3da04a4d1"
 
 [p."kernel.core"]
 p = "kernel/core"
@@ -202,7 +202,7 @@ t = [ "printer" ]
 
   [[p."drivers.core.printer".f]]
   n = "init.lua"
-  s = "07001e684472ec02f4521549d5392839d075180261f3c7a04698eb83fdfef723"
+  s = "fb776c9bbf34cf1aa15a377800d8b27b871993a597c93acd9e9ec64b8cdeb14a"
 
 [p."drivers.core.computer"]
 p = "drivers/core/computer"
@@ -210,7 +210,7 @@ t = [ "computer" ]
 
   [[p."drivers.core.computer".f]]
   n = "init.lua"
-  s = "3dc58f5eccdac304f5b5f0824cec618e97edb40b3611435531edd0eff35e393d"
+  s = "cc7dd62cf49ef57391fa1fe8feb51f53daa328bb9288cc260eea462a2dba0cbd"
 
 [p."drivers.core.speaker"]
 p = "drivers/core/speaker"
@@ -235,7 +235,7 @@ t = [ "drive" ]
 
   [[p."drivers.core.disk_drive".f]]
   n = "init.lua"
-  s = "bb12de657d71f73d0ebf64a64776b136ce4afe0836b8ec549a7ed536f964c1e7"
+  s = "31a600fa330dc1bf807e7888b9c6e3696766532f43ccb1438c8aafa756ae72ce"
 
 [p."drivers.core.monitor"]
 p = "drivers/core/monitor"
