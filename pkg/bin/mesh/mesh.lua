@@ -297,10 +297,22 @@ local function install_package(name, branch, bypass_hash)
             end
             local actual_hash = sha2.sha256(content)
             if actual_hash ~= expected_hash then
-                if config.debug then
-                    print("Mesh: First 100 bytes of content:")
-                    print(string.sub(content, 1, 100))
+            if config.debug then
+                print("Mesh: First 100 bytes of content:")
+                print(string.sub(content, 1, 100))
+                print("Mesh: Content length: " .. #content)
+                -- Check for line ending types
+                local crlf_count = 0
+                local lf_count = 0
+                for i = 1, #content - 1 do
+                    if content:sub(i, i+1) == "\r\n" then
+                        crlf_count = crlf_count + 1
+                    elseif content:sub(i, i) == "\n" then
+                        lf_count = lf_count + 1
+                    end
                 end
+                print("Mesh: CRLF sequences: " .. crlf_count .. ", LF sequences: " .. lf_count)
+            end
                 fs.delete(dest_path)
                 error(
                     "\nIntegrity Error: Hash mismatch for "
