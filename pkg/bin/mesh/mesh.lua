@@ -32,12 +32,14 @@ local branch = "main"
 
 -- Helper function to fetch a URL and save it to a file.
 local function fetch(url, path)
+    print("Fetching " .. url .. "...")
     local res = http.get(url, { ["Cache-Control"] = "no-cache" })
     if not res then return false, "Connection failed" end
     local f = fs.open(path, "w")
     f.write(res.readAll())
     f.close()
     res.close()
+    print("Done")
     return true
 end
 
