@@ -50,5 +50,50 @@ f.close()
 
 print("Network configured for Grid: " .. ssid)
 
+
+local optional_packs = {
+    {
+        id = "mekanism",
+        label = "Mekanism integration drivers",
+        packages = {
+            "packages.drivers_mekanism"
+        },
+        autodetect = function()
+            return type(rawget(_G, "mekanismEnergyHelper")) == "table"
+                or type(rawget(_G, "mekanismFilterHelper")) == "table"
+        end,
+    }
+}
+
+local function yn(prompt, default)
+    local suffix = default and " [Y/n] " or " [y/N] "
+    while true do
+        write(prompt .. suffix)
+        local a = read()
+        if a == "" then return default end
+        a = a:lower()
+        if a == "y" or a == "yes" then return true end
+        if a == "n" or a == "no" then return false end
+    end
+end
+
+for _, pack in ipairs(optional_packs) do
+    local detected = pack.detect and pack.detect() or false
+    local install = yn(
+        ("Install %s?%s"):format(
+            pack.label,
+            detected and " (detected)" or ""
+        ),
+        detected
+    )
+
+    if install then
+        -- call mesh install pack.package (however your installer invokes mesh)
+        -- e.g. shell.run("mesh", "install", pack.package, "--branch", branch)
+        shell.run("/bin/mesh.lua", "install", pack.package)
+    end
+end
+
+
 os.sleep(10)
 os.reboot()
