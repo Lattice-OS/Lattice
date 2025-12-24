@@ -320,16 +320,28 @@ local SHA2_256 = function()
     return public;
 end
 
--- Minor tweak to the return value as my codebase expects a table with a sha256 function
+-- Lattice helper function to convert a string to a byte iterator
+local function byte_iter_from_string(s)
+    local i = 0
+    local n = #s
+
+    return function()
+        i = i + 1
+        if i <= n then
+            return string.byte(s, i)
+        end
+        return nil
+    end
+end
+
 local sha = {
     sha256 = function(content)
         local hasher = SHA2_256()
-        local bytes = { string.byte(content, 1, #content) }
         hasher.init()
-        hasher.update(bytes)
+        hasher.update(byte_iter_from_string(content))
         hasher.finish()
         return hasher.asHex()
-    end
+    end,
 }
 
 return sha;
