@@ -11,23 +11,87 @@ package.path = package.path .. ";/lib/?.lua;/lib/?/init.lua"
 -- Runtime arguments
 local args = { ... }
 
--- Base API URL
-local API_BASE = "https://lattice-os.cc/pkg/api/"
+-- Configuration table
+local config = {
+    api_base = "https://lattice-os.cc/pkg/api/",
+    branch = "main",
+    skip_hash = false,
+    mmv = nil,
+    debug = false
+}
 
--- Package Index
+-- Runtime state
 local package_index = nil
-
--- Dependency Tracker (prevents infinite recursion loops)
 local seen_packages = {}
+local repo_lock = {}
 
--- Skip hash verification flag
-local skip_hash_flag = false
+-- Helper function to load repo lock file
+local function load_repo_lock()
+    if fs.exists("/var/repo.lock") then
+        local f = fs.open("/var/repo.lock", "r")
+        local content = f.readAll()
+        f.close()
+        repo_lock = textutils.unserialize(content) or {}
+        if config.debug then
+            local count = 0
+            for _ in pairs(repo_lock) do count = count + 1 end
+            print("Mesh: Loaded repo lock with " .. count .. " packages")
+        end
+    else
+        if config.debug then
+            print("Mesh: No repo lock file found, starting fresh")
+        end
+    end
+end
 
--- Minimum Manifest Version flag
-local mmv = nil
+-- Helper function to save repo lock file
+local function save_repo_lock()
+    if not fs.exists("/var") then
+        fs.makeDir("/var")
+    end
+    local f = fs.open("/var/repo.lock", "w")
+    f.write(textutils.serialize(repo_lock))
+    f.close()
+    if config.debug then
+        local count = 0
+        for _ in pairs(repo_lock) do count = count + 1 end
+        print("Mesh: Saved repo lock with " .. count .. " packages")
+    end
+end
 
--- The branch to use for package installation
-local branch = "main"
+-- Helper function to check if package needs updating
+local function package_needs_update(pkg_name, pkg_data)
+    if not repo_lock[pkg_name] then
+        if config.debug then
+            print("Mesh: " .. pkg_name .. " not in lock file, needs install")
+        end
+        return true
+    end
+
+    for _, file_entry in ipairs(pkg_data.f) do
+        local expected_hash = file_entry.s
+        local locked_hash = repo_lock[pkg_name][file_entry.n]
+        if locked_hash ~= expected_hash then
+            if config.debug then
+                print("Mesh: " .. pkg_name .. ":" .. file_entry.n .. " hash changed, needs update")
+            end
+            return true
+        end
+    end
+
+    if config.debug then
+        print("Mesh: " .. pkg_name .. " up to date, skipping")
+    end
+    return false
+end
+
+-- Helper function to update repo lock for a package
+local function update_repo_lock(pkg_name, pkg_data)
+    repo_lock[pkg_name] = {}
+    for _, file_entry in ipairs(pkg_data.f) do
+        repo_lock[pkg_name][file_entry.n] = file_entry.s
+    end
+end
 
 
 -- Helper function to fetch a URL and save it to a file.
@@ -49,7 +113,7 @@ local function fetch_index(branch)
     if package_index then return package_index end
 
     -- If the index doesn't exist, fetch it.
-    local res = http.get(API_BASE .. branch .. "/index?format=lua")
+    local res = http.get(config.api_base .. config.branch .. "/index?format=lua")
     if not res then error("Could not reach Lattice API") end
     local index_source = res.readAll()
     res.close()
@@ -60,10 +124,10 @@ local function fetch_index(branch)
     -- than just loading arbitrary lua code from an untrusted source.
     package_index = load(index_source)()
 
-    if mmv then
-        if package_index.repository.version ~= mmv then
+    if config.mmv then
+        if package_index.repository.version ~= config.mmv then
             print("Mesh: Repository version mismatch")
-            print("Mesh: Minimum Version: " .. mmv)
+            print("Mesh: Minimum Version: " .. config.mmv)
             print("Mesh: Current Version: " .. package_index.repository.version)
             error("Mesh: Repository version mismatch")
         end
@@ -76,16 +140,19 @@ end
 local function read_args()
     for i, arg in ipairs(args) do
         if arg == "--skip-hash" or arg == "-s" then
-            skip_hash_flag = true
+            config.skip_hash = true
             table.remove(args, i)
         elseif arg == "--mmv" or arg == "-m" then
             table.remove(args, i)   -- Remove the mmv flag
-            mmv = tonumber(args[i]) -- Set the mmv value
+            config.mmv = tonumber(args[i]) -- Set the mmv value
             table.remove(args, i)   -- Remove the mmv value
         elseif arg == "--branch" or arg == "-b" then
             table.remove(args, i)   -- Remove the branch flag
-            branch = args[i]        -- Set the branch value
+            config.branch = args[i]        -- Set the branch value
             table.remove(args, i)   -- Remove the branch value
+        elseif arg == "--debug" or arg == "-d" then
+            config.debug = true
+            table.remove(args, i)
         end
     end
 end
@@ -118,8 +185,8 @@ local function install_package(name, branch, bypass_hash)
     if seen_packages[name] then return true end
     seen_packages[name] = true
 
-    branch = branch or "main"
-    bypass_hash = bypass_hash or skip_hash_flag
+    branch = branch or config.branch
+    bypass_hash = bypass_hash or config.skip_hash
 
     print("Mesh: Resolving " .. name .. "...")
     local index = fetch_index(branch)
@@ -130,9 +197,14 @@ local function install_package(name, branch, bypass_hash)
     local pkg = index.p[name]
     if not pkg then error("Package not found in index: " .. name) end
 
+    -- Check if package needs updating
+    if not package_needs_update(name, pkg) then
+        return true
+    end
+
     -- B. Verify Hash Engine Availability
     local sha2 = nil
-    if not bypass_hash then
+    if not bypass_hash and not config.skip_hash then
         local ok, lib = pcall(require, "shared.sha2")
         if ok then
             sha2 = lib
@@ -206,7 +278,7 @@ local function install_package(name, branch, bypass_hash)
             dest_path = dest_root .. "/" .. filename
         end
 
-        local file_url = API_BASE .. branch .. "/package/" .. pkg.p .. "/" .. filename
+        local file_url = config.api_base .. branch .. "/package/" .. pkg.p .. "/" .. filename
 
         print("Mesh: Fetching " .. name .. ":" .. filename)
         local ok, err = fetch(file_url, dest_path)
@@ -220,8 +292,15 @@ local function install_package(name, branch, bypass_hash)
             local content = f.readAll()
             f.close()
 
+            if config.debug then
+                print("Mesh: Verifying " .. name .. ":" .. filename .. " (size: " .. #content .. ")")
+            end
             local actual_hash = sha2.sha256(content)
             if actual_hash ~= expected_hash then
+                if config.debug then
+                    print("Mesh: First 100 bytes of content:")
+                    print(string.sub(content, 1, 100))
+                end
                 fs.delete(dest_path)
                 error(
                     "\nIntegrity Error: Hash mismatch for "
@@ -242,6 +321,10 @@ local function install_package(name, branch, bypass_hash)
         generate_driver_map(package_index)
     end
 
+    -- Update repo lock
+    update_repo_lock(name, pkg)
+    save_repo_lock()
+
     print("Mesh: Installed " .. name)
     return true
 end
@@ -250,17 +333,20 @@ end
 -- Read the command line arguments and parse the feature flags
 read_args()
 
+-- Load repo lock file
+load_repo_lock()
+
 -- Command to execute
 local cmd = args[1]
 local target = args[2]
 
 print("Mesh: Starting")
-print("Mesh: Parsing arguments")
-print("Mesh: CMD: " .. cmd)
-print("Mesh: Target: " .. tostring(target))
-print("Mesh: Branch: " .. branch)
-print("Mesh: Skip-Hash: " .. tostring(skip_hash))
-print("Mesh: MMV: " .. tostring(mmv))
+if config.debug then
+    print("Mesh: Parsing arguments")
+    print("Mesh: CMD: " .. cmd)
+    print("Mesh: Target: " .. tostring(target))
+    print("Mesh: Config: " .. textutils.serialize(config))
+end
 print("Mesh: Executing command")
 
 if cmd == "install" then

@@ -7,7 +7,7 @@ if fs.exists("/bin/mesh.lua") then
 end
 shell.run("wget", "https://lattice-os.cc/pkg/api/main/package/bin/mesh/mesh.lua", "/bin/mesh.lua")
 os.sleep(1)
-shell.run("/bin/mesh.lua", "bootstrap")
+shell.run("/bin/mesh.lua", "bootstrap", "--debug")
 
 os.sleep(1)
 
@@ -90,7 +90,7 @@ for _, pack in ipairs(optional_packs) do
     if install then
         -- call mesh install pack.package (however your installer invokes mesh)
         -- e.g. shell.run("mesh", "install", pack.package, "--branch", branch)
-        shell.run("/bin/mesh.lua", "install", pack.package)
+        shell.run("/bin/mesh.lua", "install", pack.package, "--debug")
     end
 end
 
