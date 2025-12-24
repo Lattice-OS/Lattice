@@ -1,0 +1,58 @@
+name: Normalize Line Endings
+
+on:
+  push:
+    paths:
+      - "pkg/**"
+  pull_request:
+    paths:
+      - "pkg/**"
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Normalize line endings to LF
+        run: |
+          # Find all text files and convert CRLF to LF
+          find pkg -type f \( -name "*.lua" -o -name "*.toml" -o -name "*.md" -o -name "*.txt" \) -exec sed -i 's/\r$//' {} \;
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build packup tool
+        run: bun run build
+
+      - name: Regenerate package index
+        run: ./packup-bin -d pkg
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit normalized files and updated index
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git add .
+          git commit -m "Normalize line endings to LF and update package index"
+          git push
