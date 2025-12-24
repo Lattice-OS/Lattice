@@ -322,7 +322,12 @@ end
 
 -- Minor tweak to the return value as my codebase expects a table with a sha256 function
 local sha = {
-    sha256 = SHA2_256
+    sha256 = function(content)
+        local hasher = SHA2_256()
+        hasher.update(content)
+        hasher.finish()
+        return hasher.asHex()
+    end
 }
 
 return sha;
