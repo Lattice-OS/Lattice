@@ -1,6 +1,6 @@
 [repository]
 name = "Lattice Official"
-updated = 1_766_593_470
+updated = 1_766_593_681
 
 [p."services.audio"]
 p = "services/audio"
@@ -143,7 +143,7 @@ p = "shared/sha2"
 
   [[p."shared.sha2".f]]
   n = "init.lua"
-  s = "30811697ceea7a6bad1fc7ae735de5d684bc382ca7dddf1d7986bbee07ec1beb"
+  s = "8aae180ad6d78903844779e8db4dbd4b0626cabea57718d74e0d4f021d8752fa"
 
 [p."shared.log"]
 p = "shared/log"
