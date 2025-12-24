@@ -325,7 +325,7 @@ local sha = {
     sha256 = function(content)
         local hasher = SHA2_256()
         -- Convert the content string to bytes
-        hasher.update(string.byte(content, 1, -1))
+        hasher.update({ string.byte(content, 1, -1) })
         hasher.finish()
         return hasher.asHex()
     end
