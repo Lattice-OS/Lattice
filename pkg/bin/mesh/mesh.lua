@@ -1,14 +1,36 @@
 -- mesh.lua
--- Lattice Standalone Package Manager (v0.4.0)
+-- Lattice Standalone Package Manager (v0.4.1)
 -- Handles multi-file packages and self-seeding hash verification.
 
+-- Update the package path so that lua can find the required libraries
 package.path = package.path .. ";/lib/?.lua;/lib/?/init.lua"
 
+
+--- Section: Runtime Variables
+
+-- Runtime arguments
 local args = { ... }
+
+-- Base API URL
 local API_BASE = "https://lattice-os.cc/pkg/api/"
 
+-- Package Index
+local package_index = nil
 
--- 1. Helper: Raw HTTP Download
+-- Dependency Tracker (prevents infinite recursion loops)
+local seen_packages = {}
+
+-- Skip hash verification flag
+local skip_hash_flag = false
+
+-- Minimum Manifest Version flag
+local mmv = nil
+
+-- The branch to use for package installation
+local branch = "main"
+
+
+-- Helper function to fetch a URL and save it to a file.
 local function fetch(url, path)
     local res = http.get(url, { ["Cache-Control"] = "no-cache" })
     if not res then return false, "Connection failed" end
@@ -19,19 +41,56 @@ local function fetch(url, path)
     return true
 end
 
--- 2. Local State / CLI Flags
-local skip_hash_flag = false
-for i, arg in ipairs(args) do
-    if arg == "--skip-hash" or arg == "-s" then
-        skip_hash_flag = true
-        table.remove(args, i)
+-- Helper function to fetch the package index and store it once.
+local function fetch_index(branch)
+    -- If the index exists, return it instead of fetching it again
+    if package_index then return package_index end
+
+    -- If the index doesn't exist, fetch it.
+    local res = http.get(API_BASE .. branch .. "/index?format=lua")
+    if not res then error("Could not reach Lattice API") end
+    local index_source = res.readAll()
+    res.close()
+
+    -- Is this secure?
+    -- No, it's not secure. The index is loaded as a Lua script, which can execute arbitrary code.
+    -- But, since the lattice-api generates the code on the fly from toml, it __should__ be safer
+    -- than just loading arbitrary lua code from an untrusted source.
+    package_index = load(index_source)()
+
+    if mmv then
+        if package_index.repository.version ~= mmv then
+            print("Mesh: Repository version mismatch")
+            print("Mesh: Minimum Version: " .. mmv)
+            print("Mesh: Current Version: " .. package_index.repository.version)
+            error("Mesh: Repository version mismatch")
+        end
+    end
+
+    return package_index
+end
+
+-- Helper function to read the arguments
+local function read_args()
+    for i, arg in ipairs(args) do
+        if arg == "--skip-hash" or arg == "-s" then
+            skip_hash_flag = true
+            table.remove(args, i)
+        elseif arg == "--mmv" or arg == "-m" then
+            table.remove(args, i)   -- Remove the mmv flag
+            mmv = tonumber(args[i]) -- Set the mmv value
+            table.remove(args, i)   -- Remove the mmv value
+        elseif arg == "--branch" or arg == "-b" then
+            table.remove(args, i)   -- Remove the branch flag
+            branch = args[i]        -- Set the branch value
+            table.remove(args, i)   -- Remove the branch value
+        end
     end
 end
 
--- 3. Dependency Tracker (prevents infinite recursion loops)
-local seen_packages = {}
 
--- Helper: Generates the /os/drivers.lua mapping table from the index
+
+-- Generates the /os/drivers.lua mapping table from the index
 local function generate_driver_map(index)
     print("Mesh: Regenerating driver map...")
     local mapping = {}
@@ -50,7 +109,8 @@ local function generate_driver_map(index)
     print("Mesh: Driver map updated.")
 end
 
--- 4. Core Install Logic
+
+-- Helper function to install a package and all of its dependencies
 local function install_package(name, branch, bypass_hash)
     -- Prevent infinite recursion loops
     if seen_packages[name] then return true end
@@ -60,14 +120,8 @@ local function install_package(name, branch, bypass_hash)
     bypass_hash = bypass_hash or skip_hash_flag
 
     print("Mesh: Resolving " .. name .. "...")
+    local index = fetch_index(branch)
 
-    -- A. Fetch index as Lua Table
-    local res = http.get(API_BASE .. branch .. "/index?format=lua")
-    if not res then error("Could not reach Lattice API") end
-    local index_source = res.readAll()
-    res.close()
-
-    local index = load(index_source)()
     if not index or not index.p then error("Invalid index received from server") end
     print("Mesh: Manifest Updated At: " .. index.repository.updated)
 
@@ -95,28 +149,41 @@ local function install_package(name, branch, bypass_hash)
         end
     end
 
-    -- D. Determine the Install Root
     -- D. Determine the Install Root / Path
     local dest_root = ""
-    local is_override = false
+    local override_path = nil
+    local override_is_dir = false
 
-    -- Check for Metadata Override first
     if pkg.m and pkg.m.install_path then
-        dest_root = fs.getDir(pkg.m.install_path)
-        is_override = true
+        override_path = pkg.m.install_path
+
+        -- Treat install_path as a directory if it doesn't look like a file path.
+        -- e.g. "/lib/shared/sounds" (dir) vs "/startup.lua" (file)
+        if override_path:sub(-1) == "/" then
+            override_is_dir = true
+            override_path = override_path:sub(1, -2) -- trim trailing slash
+        else
+            local last = fs.getName(override_path)
+            override_is_dir = not last:find("%.") -- no extension -> dir
+        end
+
+        if override_is_dir then
+            dest_root = override_path
+        else
+            dest_root = fs.getDir(override_path)
+        end
     else
-        -- Standard Logic
+        -- Standard logic
         local root = "/os"
         if name:match("^shared%.") then
             root = "/lib"
         elseif name:match("^bin%.") then
             root = ""
         end
-        local pkg_dir_path = name:gsub("%.", "/")
-        dest_root = root .. "/" .. pkg_dir_path
+        dest_root = root .. "/" .. name:gsub("%.", "/")
     end
 
-    if not fs.exists(dest_root) and dest_root ~= "" then
+    if dest_root ~= "" and not fs.exists(dest_root) then
         fs.makeDir(dest_root)
     end
 
@@ -124,11 +191,15 @@ local function install_package(name, branch, bypass_hash)
     for _, file_entry in ipairs(pkg.f) do
         local filename = file_entry.n
         local expected_hash = file_entry.s
-        local dest_path = ""
 
-        if is_override then
-            -- Use the exact path provided in metadata
-            dest_path = pkg.m.install_path
+        local dest_path
+        if override_path then
+            if override_is_dir then
+                dest_path = dest_root .. "/" .. filename
+            else
+                -- File override: install_path is the exact destination (single-file packages)
+                dest_path = override_path
+            end
         else
             dest_path = dest_root .. "/" .. filename
         end
@@ -137,13 +208,11 @@ local function install_package(name, branch, bypass_hash)
 
         print("Mesh: Fetching " .. name .. ":" .. filename)
         local ok, err = fetch(file_url, dest_path)
-
         if not ok then
             error("Download failed for " .. filename .. ": " .. err)
         end
 
         -- F. Integrity Check
-        -- Can be skipped by setting the --skip-hash flag
         if not bypass_hash and sha2 then
             local f = fs.open(dest_path, "r")
             local content = f.readAll()
@@ -152,26 +221,45 @@ local function install_package(name, branch, bypass_hash)
             local actual_hash = sha2.sha256(content)
             if actual_hash ~= expected_hash then
                 fs.delete(dest_path)
-                error("\nIntegrity Error: Hash mismatch for " ..
-                    name .. ":" .. filename .. "\nExpected: " .. expected_hash .. "\nActual: " .. actual_hash)
+                error(
+                    "\nIntegrity Error: Hash mismatch for "
+                    .. name
+                    .. ":"
+                    .. filename
+                    .. "\nExpected: "
+                    .. expected_hash
+                    .. "\nActual: "
+                    .. actual_hash
+                )
             end
         end
     end
 
     -- G. Driver Mapping Hook
-    -- If this was a driver or we are doing a major bootstrap, regenerate the lookup table
     if name:match("^drivers%.") or name:match("^packages%.") then
-        generate_driver_map(index)
+        generate_driver_map(package_index)
     end
 
     print("Mesh: Installed " .. name)
     return true
 end
 
--- 5. CLI Entrypoint
+--- Section: CLI Entrypoint
+-- Read the command line arguments and parse the feature flags
+read_args()
+
+-- Command to execute
 local cmd = args[1]
 local target = args[2]
-local branch = args[3] or "main"
+
+print("Mesh: Starting")
+print("Mesh: Parsing arguments")
+print("Mesh: CMD: " .. cmd)
+print("Mesh: Target: " .. tostring(target))
+print("Mesh: Branch: " .. branch)
+print("Mesh: Skip-Hash: " .. tostring(skip_hash))
+print("Mesh: MMV: " .. tostring(mmv))
+print("Mesh: Executing command")
 
 if cmd == "install" then
     if not target then error("Usage: mesh install <package>") end
@@ -185,6 +273,6 @@ elseif cmd == "bootstrap" then
     install_package("bin.mesh", branch)
     print("\nMesh: Lattice OS Bootstrap Complete.")
 else
-    print("Lattice Mesh v0.4.0")
+    print("Lattice Mesh v0.4.1")
     print("Usage: mesh install <pkg> [--skip-hash] [branch]")
 end

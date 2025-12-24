@@ -3,8 +3,5 @@ name = "drivers.core.printer"
 entrypoint = "init.lua"
 description = "Generic Printer Driver"
 
-[dependencies]
-lib = ["shared.log"]
-
 [driver]
 supported_types = ["printer"]

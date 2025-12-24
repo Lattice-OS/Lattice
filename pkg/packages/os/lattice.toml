@@ -4,11 +4,12 @@ entrypoint = "lattice.toml"
 
 [dependencies]
 libs = [
-    "boot.lboot",
-    "boot.startup",
-    "kernel.core",
-    "kernel.device_manager",
-    "config.system",
-    "config.repo",
-    "packages.core_drivers",
+  "boot.lboot",
+  "boot.startup",
+  "kernel.core",
+  "kernel.device_manager",
+  "config.system",
+  "config.repo",
+  "packages.core_drivers",
+  "packages.shared",
 ]

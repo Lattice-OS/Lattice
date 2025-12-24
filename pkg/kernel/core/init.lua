@@ -48,6 +48,32 @@ local STATUS_FACE = "back"
 local services = {}
 _G.K_DEBUG_SERVICES = {}
 
+local device_machine_notes = {
+    ["computer.basic"] = { name = "Basic Computer", instrument = 0.5 },
+    ["computer.advanced"] = { name = "Advanced Computer", pitch = 1.0 },
+    ["turtle.basic"] = { name = "Basic Turtle", pitch = 1.5 },
+    ["turtle.advanced"] = { name = "Advanced Turtle", pitch = 2.0 },
+    ["pocket.computer"] = { name = "Pocket Computer", pitch = 2.5 },
+    ["command.computer"] = { name = "Command Computer", pitch = 3.0 }
+}
+
+local function detect_machine()
+    -- Order matters: turtles have *both* turtle and basic/advanced
+    if turtle then
+        return (turtle.inspect and "turtle.advanced") or "turtle.basic"
+    elseif pocket then
+        return "pocket.computer"
+    elseif command then
+        return "command.computer"
+    elseif term and term.isColor and term.isColor() then
+        return "computer.advanced"
+    else
+        return "computer.basic"
+    end
+end
+
+_G.K_MACHINE_TYPE = detect_machine
+
 
 --- Provides a global status light function
 function _G.K_STATUS_ERROR(enable)
@@ -75,6 +101,8 @@ end
 
 log.info("Welcome to Lattice OS")
 
+
+
 for _, dev in ipairs(device_manager.get_devices()) do
     log.info(dev.name .. " (" .. dev.type .. "): " .. dev.status)
 end
@@ -96,7 +124,8 @@ audio.init()
 
 -- Boot confirmation beep
 os.sleep(0.5)
-local ok, err = audio.ding()
+
+local ok, err = audio.play_dfpwm_file("/lib/shared/sounds/boot.dfpwm")
 if not ok then
     K_STATUS_ERROR(true)
     log.error("Failed to play beep sound: " .. err)

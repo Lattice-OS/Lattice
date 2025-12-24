@@ -10,6 +10,10 @@ local Debug = {
     refresh_requested = false,
 }
 
+local displays = {}
+
+local screens = {}
+
 -- Find a monitor driver to use as our display
 local function find_display()
     for _, dev in ipairs(device_manager.get_devices()) do
