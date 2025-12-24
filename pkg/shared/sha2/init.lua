@@ -320,4 +320,9 @@ local SHA2_256 = function()
     return public;
 end
 
-return SHA2_256;
+-- Minor tweak to the return value as my codebase expects a table with a sha256 function
+local sha = {
+    sha256 = SHA2_256
+}
+
+return sha;
